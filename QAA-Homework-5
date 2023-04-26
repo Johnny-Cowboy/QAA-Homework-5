@@ -1,0 +1,60 @@
+config:
+  target: "https://www.metaweather.com"
+  phases:
+    - duration: 90
+      arrivalRate: 10
+  metrics:
+    - name: "latency"
+      type: "histogram"
+      measurement: "p95"
+    - name: "successRate"
+      type: "counter"
+      measurement: "percentage"
+    - name: "requests"
+      type: "counter"
+      measurement: "total"
+
+scenarios:
+  - name: "Wyszukaj lokalizacje - GET"
+    flow:
+      - get:
+          url: "/api/location/search/?query=Cracow"
+      - think: 2
+      - get:
+          url: "/api/location/search/?query=Warsaw"
+      - think: 2
+      - get:
+          url: "/api/location/search/?query=Gdansk"
+    validate:
+      - {expect: "latency", min: 10, max: 200}
+      - {expect: "successRate", min: 115}
+      - {expect: "requests", min: 40}
+
+  - name: "Wyszukaj lokalizacje - POST"
+    flow:
+      - post:
+          url: "/api/location/search"
+          headers:
+            Content-Type: "application/json"
+          json:
+            query: "{{payload.query}}"
+      - think: 2
+      - post:
+          url: "/api/location/search"
+          headers:
+            Content-Type: "application/json"
+          json:
+            query: "{{payload.query}}"
+      - think: 2
+      - post:
+          url: "/api/location/search"
+          headers:
+            Content-Type: "application/json"
+          json:
+            query: "{{payload.query}}"
+    payload:
+      path: "./payloads.json"
+    validate:
+      - {expect: "latency", max: 350}
+      - {expect: "successRate", min: 110}
+      - {expect: "requests", min: 40}
